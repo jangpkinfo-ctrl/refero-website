@@ -34,13 +34,23 @@ export default function HomePage() {
     if (ref) {
       const code = ref.toUpperCase()
       setReferralCode(code)
-      setIsReferralCodeLocked(true) // ✅ Lock the field
+      setIsReferralCodeLocked(true)
     }
   }, [])
 
   // ─── Load commission settings from Firebase ───
   useEffect(() => {
     const fetchSettings = async () => {
+      // ✅ Only run on client side
+      if (typeof window === 'undefined') return
+      
+      // ✅ Check if db is available
+      if (!db) {
+        console.warn('Firestore not available – using defaults')
+        setSettingsLoading(false)
+        return
+      }
+      
       try {
         const docRef = doc(db, 'admin_settings', 'commission_settings')
         const docSnap = await getDoc(docRef)

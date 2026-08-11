@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db, auth } from '@/lib/firebase/config'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit } from 'firebase/firestore'
+import { db, auth } from '@/lib/firebase/admin'  // ✅ Use admin
 import { validators } from '@/lib/utils/validators'
 
 function generateReferralCode(): string {
@@ -21,7 +19,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'All fields are required' }, { status: 400 })
     }
 
-    // ✅ Server-side email validation
     const emailCheck = validators.email(email)
     if (!emailCheck.valid) {
       return NextResponse.json({ message: emailCheck.message || 'Invalid email' }, { status: 400 })
@@ -32,31 +29,34 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify referral code exists
-    const q = query(
-      collection(db, 'users'),
-      where('referralCode', '==', referralCode.toUpperCase()),
-      where('isDeleted', '==', false),
-      limit(1)  // ✅ Now correctly imported
-    )
-    const snapshot = await getDocs(q)
-    if (snapshot.empty) {
+    const referrerSnapshot = await db
+      .collection('users')
+      .where('referralCode', '==', referralCode.toUpperCase())
+      .where('isDeleted', '==', false)
+      .limit(1)
+      .get()
+
+    if (referrerSnapshot.empty) {
       return NextResponse.json({ message: 'Invalid referral code' }, { status: 400 })
     }
 
-    const referrerDoc = snapshot.docs[0]
+    const referrerDoc = referrerSnapshot.docs[0]
     const referrerData = referrerDoc.data()
 
     // Create Firebase Auth user
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-    const user = userCredential.user
+    const userRecord = await auth.createUser({
+      email,
+      password,
+      displayName: fullName,
+    })
 
     // Generate unique referral code
     let userReferralCode = generateReferralCode()
     let codeExists = true
     let attempts = 0
     while (codeExists && attempts < 10) {
-      const check = await getDoc(doc(db, 'users', userReferralCode))
-      if (!check.exists()) {
+      const check = await db.collection('users').doc(userReferralCode).get()
+      if (!check.exists) {
         codeExists = false
       } else {
         userReferralCode = generateReferralCode()
@@ -69,19 +69,19 @@ export async function POST(req: NextRequest) {
     const level = referrerLevel + 1
 
     if (level > 10) {
-      await user.delete()
+      await auth.deleteUser(userRecord.uid)
       return NextResponse.json({ message: 'Maximum referral depth (10) reached' }, { status: 400 })
     }
 
     const userData = {
-      uid: user.uid,
+      uid: userRecord.uid,
       email,
       fullName,
       referralCode: userReferralCode,
       referredBy: referralCode.toUpperCase(),
       referralLink: `https://referoglobal.com?ref=${userReferralCode}`,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       deviceId: 'web_registration',
       deviceModel: 'web',
       level,
@@ -98,22 +98,32 @@ export async function POST(req: NextRequest) {
       totalNetworkReferrals: 0,
     }
 
-    await setDoc(doc(db, 'users', user.uid), userData)
+    await db.collection('users').doc(userRecord.uid).set(userData)
 
     // Update referrer
-    await setDoc(doc(db, 'users', referrerDoc.id, 'referralHistory', user.uid), {
-      referredUserId: user.uid,
-      referredAt: serverTimestamp(),
-    }, { merge: true })
+    await db
+      .collection('users')
+      .doc(referrerDoc.id)
+      .collection('referralHistory')
+      .doc(userRecord.uid)
+      .set({
+        referredUserId: userRecord.uid,
+        referredAt: new Date(),
+      }, { merge: true })
 
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString()
-    await setDoc(doc(db, 'users', user.uid, 'otp', 'current'), {
-      code: otp,
-      createdAt: serverTimestamp(),
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-      isUsed: false,
-    })
+    await db
+      .collection('users')
+      .doc(userRecord.uid)
+      .collection('otp')
+      .doc('current')
+      .set({
+        code: otp,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        isUsed: false,
+      })
 
     // Send OTP via your existing API
     const otpApiUrl = process.env.NEXT_PUBLIC_OTP_API_URL || 'https://refero-otp-api.vercel.app/api'

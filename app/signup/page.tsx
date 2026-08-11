@@ -37,7 +37,6 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validate email again
     const emailCheck = validators.email(email)
     if (!emailCheck.valid) {
       toast.error(emailCheck.message || 'Invalid email')
@@ -182,7 +181,6 @@ export default function SignupPage() {
               </button>
             </form>
 
-            {/* ✅ Login link removed - replaced with app reference */}
             <p className="text-white/40 text-center text-sm mt-4">
               Already have an account?{' '}
               <span className="text-primary-400">Open the Refero app</span>

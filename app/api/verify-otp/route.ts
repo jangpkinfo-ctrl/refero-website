@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebase/config'
-import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, limit } from 'firebase/firestore'
+import { db } from '@/lib/firebase/admin'  // ✅ Use admin
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,31 +9,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Email and OTP are required' }, { status: 400 })
     }
 
-    // ✅ Find user by email using modular syntax
-    const q = query(
-      collection(db, 'users'),
-      where('email', '==', email),
-      limit(1)
-    )
-    const snapshot = await getDocs(q)
-    if (snapshot.empty) {
+    // Find user by email
+    const userSnapshot = await db
+      .collection('users')
+      .where('email', '==', email)
+      .limit(1)
+      .get()
+
+    if (userSnapshot.empty) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 })
     }
 
-    const userDoc = snapshot.docs[0]
+    const userDoc = userSnapshot.docs[0]
     const userId = userDoc.id
-    const userData = userDoc.data()
 
     // Get OTP
-    const otpDoc = await getDoc(doc(db, 'users', userId, 'otp', 'current'))
-    if (!otpDoc.exists()) {
+    const otpDoc = await db
+      .collection('users')
+      .doc(userId)
+      .collection('otp')
+      .doc('current')
+      .get()
+
+    if (!otpDoc.exists) {
       return NextResponse.json({ message: 'OTP not found' }, { status: 400 })
     }
 
     const otpData = otpDoc.data()
-    const storedOtp = otpData['code']
-    const expiresAt = otpData['expiresAt']?.toDate?.() || new Date(0)
-    const isUsed = otpData['isUsed'] ?? false
+    const storedOtp = otpData?.code
+    const expiresAt = otpData?.expiresAt?.toDate?.() || new Date(0)
+    const isUsed = otpData?.isUsed ?? false
 
     if (isUsed || new Date() > expiresAt) {
       return NextResponse.json({ message: 'OTP expired or already used' }, { status: 400 })
@@ -45,14 +49,22 @@ export async function POST(req: NextRequest) {
     }
 
     // Mark OTP as used and verify email
-    await updateDoc(doc(db, 'users', userId, 'otp', 'current'), {
-      isUsed: true,
-    })
+    await db
+      .collection('users')
+      .doc(userId)
+      .collection('otp')
+      .doc('current')
+      .update({
+        isUsed: true,
+      })
 
-    await updateDoc(doc(db, 'users', userId), {
-      isEmailVerified: true,
-      updatedAt: serverTimestamp(),
-    })
+    await db
+      .collection('users')
+      .doc(userId)
+      .update({
+        isEmailVerified: true,
+        updatedAt: new Date(),
+      })
 
     return NextResponse.json({ success: true, message: 'Email verified' })
   } catch (error) {

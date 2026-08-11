@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/firebase/config'
-import { collection, query, where, getDocs, limit } from 'firebase/firestore'
+import { db } from '@/lib/firebase/admin'  // ✅ Use admin
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')
@@ -10,13 +9,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const q = query(
-      collection(db, 'users'),
-      where('referralCode', '==', code.toUpperCase()),
-      where('isDeleted', '==', false),
-      limit(1)
-    )
-    const snapshot = await getDocs(q)
+    const snapshot = await db
+      .collection('users')
+      .where('referralCode', '==', code.toUpperCase())
+      .where('isDeleted', '==', false)
+      .limit(1)
+      .get()
     
     if (snapshot.empty) {
       return NextResponse.json({ valid: false })
