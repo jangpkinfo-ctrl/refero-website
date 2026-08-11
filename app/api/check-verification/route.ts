@@ -1,0 +1,10 @@
+import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+
+export async function GET() {
+  // ✅ Await cookies() before using it
+  const cookieStore = await cookies()
+  const verified = cookieStore.get('verified')?.value === 'true'
+  
+  return NextResponse.json({ verified })
+}
