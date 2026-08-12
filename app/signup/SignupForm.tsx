@@ -99,6 +99,7 @@ export default function SignupForm({
 
       <div className="card-glass p-6 md:p-8">
         <form onSubmit={handleSignup} className="space-y-5">
+          {/* Full Name */}
           <div>
             <label className="text-white/80 text-sm font-medium block mb-1">Full Name</label>
             <input
@@ -111,6 +112,7 @@ export default function SignupForm({
             />
           </div>
 
+          {/* Email */}
           <div>
             <label className="text-white/80 text-sm font-medium block mb-1">Email</label>
             <input
@@ -127,6 +129,7 @@ export default function SignupForm({
             <p className="text-white/40 text-xs mt-1">No temporary emails or aliases allowed</p>
           </div>
 
+          {/* Password */}
           <div>
             <label className="text-white/80 text-sm font-medium block mb-1">Password</label>
             <input
@@ -140,6 +143,7 @@ export default function SignupForm({
             />
           </div>
 
+          {/* Referral Code */}
           <div>
             <label className="text-white/80 text-sm font-medium block mb-1">Referral Code 🔒</label>
             <div className="w-full px-4 py-3 rounded-xl bg-primary-500/10 border border-primary-500/30 text-primary-400 font-mono">
@@ -150,6 +154,7 @@ export default function SignupForm({
             )}
           </div>
 
+          {/* Checkboxes */}
           <div className="space-y-2">
             <label className="flex items-start gap-2 text-white/70 text-sm cursor-pointer">
               <input
