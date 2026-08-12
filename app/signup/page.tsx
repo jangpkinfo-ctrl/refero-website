@@ -1,9 +1,12 @@
 import { Suspense } from 'react'
+import { connection } from 'next/server'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SignupForm from './SignupForm'
 
-export default function Page() {
+export default async function Page() {
+  await connection() // ✅ Forces dynamic rendering, no prerender
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-dark-100 to-dark-200 flex flex-col">
       <Header />

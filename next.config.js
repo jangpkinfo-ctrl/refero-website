@@ -8,10 +8,7 @@ const nextConfig = {
       },
     ],
   },
-  // ✅ Add this to bypass the prerender check
-  experimental: {
-    missingSuspenseWithCSRBailout: false,
-  },
+  // ✅ No experimental flags – they're not needed for this setup
 }
 
 module.exports = nextConfig
