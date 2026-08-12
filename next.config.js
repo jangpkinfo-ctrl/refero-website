@@ -8,7 +8,10 @@ const nextConfig = {
       },
     ],
   },
-  // ✅ Remove `experimental.serverActions` – it's now enabled by default in Next.js 14+
+  // ✅ Add this to bypass the prerender check
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
 }
 
 module.exports = nextConfig
