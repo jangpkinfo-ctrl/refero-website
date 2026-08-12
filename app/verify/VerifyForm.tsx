@@ -1,14 +1,18 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, useRef, use } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'react-hot-toast'
 
-export default function VerifyForm() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const email = searchParams.get('email') || ''
+export default function VerifyForm({ 
+  searchParams 
+}: { 
+  searchParams: Promise<{ email?: string }> 
+}) {
+  const params = use(searchParams)
+  const email = params.email || ''
   
+  const router = useRouter()
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [loading, setLoading] = useState(false)
   const [resendTimer, setResendTimer] = useState(30)

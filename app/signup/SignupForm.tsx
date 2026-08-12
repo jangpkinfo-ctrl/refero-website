@@ -1,16 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'react-hot-toast'
 import { validators } from '@/lib/utils/validators'
 
-export default function SignupForm() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const referralCode = searchParams.get('ref') || ''
+export default function SignupForm({ 
+  searchParams 
+}: { 
+  searchParams: Promise<{ ref?: string }> 
+}) {
+  // ✅ Unwrap the promise using React's `use()` hook
+  const params = use(searchParams)
+  const referralCode = params.ref || ''
 
+  const router = useRouter()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
