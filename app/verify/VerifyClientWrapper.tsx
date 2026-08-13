@@ -7,6 +7,6 @@ const VerifyForm = dynamic(() => import('./VerifyForm'), {
   loading: () => <div className="text-white/60">Loading...</div>,
 })
 
-export default function VerifyClientWrapper() {
-  return <VerifyForm />
+export default function VerifyClientWrapper({ email }: { email: string }) {
+  return <VerifyForm email={email} />
 }

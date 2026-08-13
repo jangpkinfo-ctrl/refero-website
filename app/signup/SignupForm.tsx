@@ -1,15 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation' // ✅ No useSearchParams
 import Link from 'next/link'
 import { toast } from 'react-hot-toast'
 import { validators } from '@/lib/utils/validators'
 
-export default function SignupForm() {
+export default function SignupForm({ referralCode }: { referralCode: string }) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const referralCode = searchParams.get('ref') || ''
 
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
