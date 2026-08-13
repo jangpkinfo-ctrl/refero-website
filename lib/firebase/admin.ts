@@ -1,22 +1,26 @@
 import admin from 'firebase-admin'
+import * as fs from 'fs'
+import * as path from 'path'
 
-// ✅ Only use environment variables – no file reading
-const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
-const clientEmail = process.env.FIREBASE_CLIENT_EMAIL
-let privateKey = process.env.FIREBASE_PRIVATE_KEY
+// Read service account from file (bypasses environment variable issues)
+const serviceAccountPath = path.join(process.cwd(), 'service-account.json')
 
-if (!projectId || !clientEmail || !privateKey) {
+if (!fs.existsSync(serviceAccountPath)) {
   throw new Error(
-    '❌ Missing Firebase Admin environment variables.\n' +
-    'Please set FIREBASE_CLIENT_EMAIL and FIREBASE_PRIVATE_KEY in your environment.'
+    `❌ service-account.json not found at ${serviceAccountPath}\n` +
+    'Place your Firebase service account JSON file in the project root.'
   )
 }
 
-privateKey = privateKey.replace(/\\n/g, '\n')
+const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'))
+
+if (!serviceAccount.client_email || !serviceAccount.private_key) {
+  throw new Error('❌ service-account.json is missing client_email or private_key')
+}
 
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
+    credential: admin.credential.cert(serviceAccount),
   })
 }
 

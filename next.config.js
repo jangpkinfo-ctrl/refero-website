@@ -8,7 +8,6 @@ const nextConfig = {
       },
     ],
   },
-  // ✅ No experimental flags – they're not needed for this setup
 }
 
 module.exports = nextConfig
